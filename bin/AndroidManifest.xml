@@ -17,6 +17,7 @@
             android:name="com.example.orientationapp.MainActivity"
             android:configChanges="orientation|screenSize"
             android:launchMode="singleInstance"
+            android:alwaysRetainTaskState="true"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

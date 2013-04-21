@@ -7,13 +7,18 @@ import java.util.Locale;
 
 import android.annotation.SuppressLint;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.media.AudioManager;
 import android.os.IBinder;
+import android.os.PowerManager;
+import android.os.PowerManager.WakeLock;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import android.widget.Toast;
@@ -22,6 +27,8 @@ public class OrientationService extends Service {
 	private SensorManager sensorManager;
 	private Sensor accelerometerSensor;
 	private AudioManager audioManager;
+	private PowerManager powerManager;
+	private WakeLock wakeLock;
 	private boolean accelerometerPresent;
 	private TextToSpeech tts = null;
 	private int status = AudioManager.RINGER_MODE_NORMAL;
@@ -36,6 +43,7 @@ public class OrientationService extends Service {
 		super.onCreate();
 		initSensor();
 		initTTS();
+		init();
 		Toast.makeText(getApplicationContext(), "Orientation Service created ...", Toast.LENGTH_LONG).show();
 	}
 	
@@ -48,18 +56,26 @@ public class OrientationService extends Service {
 		if (audioManager.getRingerMode() == AudioManager.RINGER_MODE_SILENT)
 			audioManager.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
 		
+		unregisterReceiver(broadcastReceiver);
 		status = AudioManager.RINGER_MODE_NORMAL;
 		Toast.makeText(getApplicationContext(), "Orientation Service destroyed ...", Toast.LENGTH_LONG).show();
+	}
+	
+	private void init() {
+		audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+		powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+		
+		IntentFilter intentFilter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
+		registerReceiver(broadcastReceiver, intentFilter);
 	}
 	
 	private void initSensor() {
 		sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
 		
-		List<Sensor> sensorList = sensorManager.getSensorList(Sensor.TYPE_ACCELEROMETER);
+		accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 		
-		if (sensorList.size() > 0) {
+		if (accelerometerSensor != null) {
 			accelerometerPresent = true;
-			accelerometerSensor = sensorList.get(0);
 			sensorManager.registerListener(accelerometerListener, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
 		}
 		
@@ -67,8 +83,6 @@ public class OrientationService extends Service {
 			accelerometerPresent = false;
 			Toast.makeText(getApplicationContext(), "No accelerometer present!", Toast.LENGTH_LONG).show();
 		}
-		
-		audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
 	}
 	
 	private void initTTS()
@@ -78,7 +92,7 @@ public class OrientationService extends Service {
 			@Override
 			public void onInit(int status) {
 				if (status == TextToSpeech.SUCCESS)
-					tts.setLanguage(Locale.US);
+					tts.setLanguage(Locale.UK);
 				
 				else if (status == TextToSpeech.ERROR)
 					Toast.makeText(getApplicationContext(), "Sorry! Text To Speech failed ...", Toast.LENGTH_LONG).show();
@@ -122,6 +136,17 @@ public class OrientationService extends Service {
 		@Override
 		public void onAccuracyChanged(Sensor sensor, int accuracy) {
 			// TODO Auto-generated method stub
+		}
+	};
+	
+	private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			if (intent.getAction().equals(Intent.ACTION_SCREEN_OFF)) {
+				sensorManager.unregisterListener(accelerometerListener);
+				sensorManager.registerListener(accelerometerListener, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
+			}
 		}
 	};
 }
