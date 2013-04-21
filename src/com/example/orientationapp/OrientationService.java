@@ -15,9 +15,13 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.media.AudioManager;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.IBinder;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
+import android.util.Log;
 import android.widget.Toast;
 
 public class OrientationService extends Service {
@@ -90,7 +94,7 @@ public class OrientationService extends Service {
 			@Override
 			public void onInit(int status) {
 				if (status == TextToSpeech.SUCCESS)
-					tts.setLanguage(Locale.UK);
+					tts.setLanguage(Locale.US);
 
 				else if (status == TextToSpeech.ERROR)
 					Toast.makeText(getApplicationContext(),
@@ -102,6 +106,20 @@ public class OrientationService extends Service {
 
 	private void speakWords(String a) {
 		tts.speak(a, TextToSpeech.QUEUE_FLUSH, null);
+	}
+
+	private void playSound() {
+		try {
+			Uri x = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+			Ringtone r = RingtoneManager
+					.getRingtone(getApplicationContext(), x);
+			r.play();
+		}
+
+		catch (Exception e) {
+			Toast.makeText(getApplicationContext(), e.getMessage(),
+					Toast.LENGTH_LONG);
+		}
 	}
 
 	@SuppressLint("SimpleDateFormat")
@@ -120,7 +138,8 @@ public class OrientationService extends Service {
 				if (status == AudioManager.RINGER_MODE_SILENT) {
 					audioManager.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
 					status = AudioManager.RINGER_MODE_NORMAL;
-					speakWords("Normal mode activated at " + formatDate());
+					playSound();
+					// speakWords("Normal mode activated at " + formatDate());
 				}
 			}
 
@@ -128,7 +147,8 @@ public class OrientationService extends Service {
 				if (status == AudioManager.RINGER_MODE_NORMAL) {
 					audioManager.setRingerMode(AudioManager.RINGER_MODE_SILENT);
 					status = AudioManager.RINGER_MODE_SILENT;
-					speakWords("Silent mode activated at " + formatDate());
+					speakWords("silent mode activated");
+					// speakWords("Silent mode activated at " + formatDate());
 				}
 			}
 		}
