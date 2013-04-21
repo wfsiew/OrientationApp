@@ -10,7 +10,7 @@ public class MainActivity extends Activity {
 	public void btnStart_click(View v) {
 		startService(new Intent(MainActivity.this, OrientationService.class));
 	}
-	
+
 	public void btnStop_click(View v) {
 		stopService(new Intent(MainActivity.this, OrientationService.class));
 	}
